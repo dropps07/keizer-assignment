@@ -112,6 +112,6 @@ export function invalidateMovieQueries(client: QueryClient) {
   return client.invalidateQueries({ queryKey: movieKeys.all });
 }
 
-export function invalidateMovieList(client: QueryClient, type: string) {
+export function invalidateMovieList(client: QueryClient) {
   return client.invalidateQueries({ queryKey: movieKeys.lists() });
 }

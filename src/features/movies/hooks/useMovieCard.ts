@@ -19,7 +19,7 @@ export function useMovieCard() {
 
   // Debounced prefetch to avoid excessive API calls
   const debouncedPrefetch = useMemo(() => {
-    let timeoutId: NodeJS.Timeout;
+    let timeoutId: number;
     
     return (id: number, delay: number = 300) => {
       clearTimeout(timeoutId);

@@ -105,7 +105,6 @@ export default function SearchPage() {
   const pageParam = Number(params.get("page") ?? 1);
   const [page, setPage] = useState(pageParam);
   const [isSmall, setIsSmall] = useState(false);
-  const client = useQueryClient();
   const { data, isLoading, isError, error, isFetching } = useSearchMovies(q, page);
 
   const results = useMemo(() => data?.results ?? [], [data]);
