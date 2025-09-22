@@ -1,62 +1,81 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, memo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useSearchMovies } from "./queries";
 import { useQueryClient } from "@tanstack/react-query";
-import { prefetchMovieDetail } from "./queries";
+import { useMovieCard } from "./hooks/useMovieCard";
 import Button from "@mui/material/Button";
 
-// Movie Card Component (matching MoviesListPage style)
-function MovieCard({ m, isSmall, onClick }: { m: any; isSmall: boolean; onClick: () => void }) {
+// Optimized Movie Card Component with prefetching
+const MovieCard = memo(function MovieCard({ m, isSmall, currentPage }: { m: any; isSmall: boolean; currentPage: number }) {
+  const { handleCardClick, handleCardHover } = useMovieCard();
+
+  const handleClick = () => {
+    handleCardClick(m.id, currentPage);
+  };
+
+  const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Prefetch movie details on hover
+    handleCardHover(m.id);
+    
+    // Visual hover effects
+    e.currentTarget.style.transform = 'translateY(-4px)';
+    e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.15)';
+  };
+
+  const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.currentTarget.style.transform = 'translateY(0)';
+    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+  };
+
   return (
-    <div 
-      onClick={onClick}
-      style={{ 
-        background: '#fff', 
-        borderRadius: 16, 
-        overflow: 'hidden', 
-        cursor: 'pointer',
-        transition: 'all 0.3s ease',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column'
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.transform = 'translateY(-4px)';
-        e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.15)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
-      }}
+    <Link 
+      to={`/movies/${m.id}`} 
+      onClick={handleClick} 
+      style={{ textDecoration: 'none', color: 'inherit' }}
     >
-      {m.poster_path ? (
-        <img 
-          alt={m.title} 
-          src={`https://image.tmdb.org/t/p/w342${m.poster_path}`} 
-          style={{ 
-            width: '100%', 
-            height: isSmall ? 160 : 240,
-            objectFit: 'cover',
-            display: 'block'
-          }} 
-        />
-      ) : (
-        <div style={{ 
-          height: isSmall ? 160 : 240, 
-          background: '#ddd',
+      <div 
+        style={{ 
+          background: '#fff', 
+          borderRadius: 16, 
+          overflow: 'hidden', 
+          cursor: 'pointer',
+          transition: 'all 0.3s ease',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+          height: '100%',
           display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#666',
-          fontSize: '14px'
-        }}>
-          No Image
-        </div>
-      )}
-    </div>
+          flexDirection: 'column'
+        }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
+        {m.poster_path ? (
+          <img 
+            alt={m.title} 
+            src={`https://image.tmdb.org/t/p/w342${m.poster_path}`} 
+            style={{ 
+              width: '100%', 
+              height: isSmall ? 160 : 240, 
+              objectFit: 'cover', 
+              display: 'block' 
+            }} 
+          />
+        ) : (
+          <div style={{ 
+            height: isSmall ? 160 : 240, 
+            background: '#ddd',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#666',
+            fontSize: '14px'
+          }}>
+            No Image
+          </div>
+        )}
+      </div>
+    </Link>
   );
-}
+});
 
 // Skeleton Component
 function MovieCardSkeleton({ isSmall }: { isSmall: boolean }) {
@@ -118,16 +137,7 @@ export default function SearchPage() {
     });
   }
 
-  const handleCardClick = (id: number) => {
-    try {
-      sessionStorage.setItem('returnAnchor', JSON.stringify({ 
-        id, 
-        page,
-        scrollY: window.scrollY,
-        timestamp: Date.now()
-      }));
-    } catch {}
-  };
+  // Removed handleCardClick - now handled in MovieCard component
 
   return (
     <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px' }}>
@@ -231,18 +241,12 @@ export default function SearchPage() {
               gridAutoFlow: 'row'
             }}>
               {displayResults.map((m) => (
-                <Link 
-                  key={m.id} 
-                  to={`/movies/${m.id}`} 
-                  onMouseEnter={() => prefetchMovieDetail(client, m.id)} 
-                  style={{ textDecoration: 'none', color: 'inherit' }}
-                >
-                  <MovieCard 
-                    m={m} 
-                    isSmall={isSmall} 
-                    onClick={() => handleCardClick(m.id)} 
-                  />
-                </Link>
+                <MovieCard 
+                  key={m.id}
+                  m={m} 
+                  isSmall={isSmall} 
+                  currentPage={page}
+                />
               ))}
             </div>
           </div>

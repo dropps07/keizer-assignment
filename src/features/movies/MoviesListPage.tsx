@@ -1,6 +1,7 @@
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef, memo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { usePopularMovies, useTrendingMovies, useFreeToWatchMovies } from "./queries";
+import { useMovieCard } from "./hooks/useMovieCard";
 import Button from "@mui/material/Button";
 
 // Skeleton Components
@@ -122,12 +123,44 @@ function useInViewFade(enabled: boolean) {
   }, [enabled]);
 }
 
-// ✅ Reusable MovieCard
-function MovieCard({ m, isSmall, firstVisit, onClick }: { m: any; isSmall: boolean; firstVisit?: boolean; onClick?: () => void }) {
+// ✅ Optimized MovieCard with prefetching
+const MovieCard = memo(function MovieCard({ 
+  m, 
+  isSmall, 
+  firstVisit, 
+  currentPage 
+}: { 
+  m: any; 
+  isSmall: boolean; 
+  firstVisit?: boolean; 
+  currentPage?: number;
+}) {
+  const { handleCardClick, handleCardHover } = useMovieCard();
+
+  const handleClick = () => {
+    if (currentPage) {
+      handleCardClick(m.id, currentPage);
+    }
+  };
+
+  const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Prefetch movie details on hover
+    handleCardHover(m.id);
+    
+    // Visual hover effects
+    (e.currentTarget as HTMLElement).style.transform = 'scale(1.03)';
+    (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 18px rgba(0,0,0,0.15)';
+  };
+
+  const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
+    (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+    (e.currentTarget as HTMLElement).style.boxShadow = 'none';
+  };
+
   return (
     <Link 
       to={`/movies/${m.id}`} 
-      onClick={onClick} 
+      onClick={handleClick} 
       style={{ textDecoration: 'none', color: 'inherit' }}
     >
       <div
@@ -144,24 +177,39 @@ function MovieCard({ m, isSmall, firstVisit, onClick }: { m: any; isSmall: boole
           boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06)',
           ...(firstVisit ? { filter: 'blur(6px)', opacity: 0, transform: 'translateY(8px)' } : {})
         }}
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLElement).style.transform = 'scale(1.03)';
-          (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 18px rgba(0,0,0,0.15)';
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
-          (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-        }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
         {m.poster_path ? (
-          <img alt={m.title} src={`https://image.tmdb.org/t/p/w342${m.poster_path}`} style={{ width: '100%', height: (isSmall ? 160 : 240), objectFit: 'cover', display: 'block', maxWidth: '100%' }} />
+          <img 
+            alt={m.title} 
+            src={`https://image.tmdb.org/t/p/w342${m.poster_path}`} 
+            style={{ 
+              width: '100%', 
+              height: (isSmall ? 160 : 240), 
+              objectFit: 'cover', 
+              display: 'block', 
+              maxWidth: '100%' 
+            }} 
+          />
         ) : (
-          <div style={{ height: (isSmall ? 160 : 240), background: '#ddd', maxWidth: '100%' }} />
+          <div style={{ 
+            height: (isSmall ? 160 : 240), 
+            background: '#ddd', 
+            maxWidth: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#666',
+            fontSize: '14px'
+          }}>
+            No Image
+          </div>
         )}
       </div>
     </Link>
   );
-}
+});
 
 function Shelf({ title, results, firstVisit, isSmall, currentPage, isMobile }: { title: string; results: any[]; firstVisit: boolean; isSmall: boolean; currentPage: number; isMobile: boolean }) {
   const cardsPerRow = isMobile ? 3 : 6;
@@ -173,18 +221,7 @@ function Shelf({ title, results, firstVisit, isSmall, currentPage, isMobile }: {
   const initialMovies = results.slice(0, INITIAL_VISIBLE);
   const remainingMovies = results.slice(INITIAL_VISIBLE);
 
-  const handleCardClick = (id?: number, currentPage?: number) => {
-    try {
-      if (typeof id === 'number') {
-        sessionStorage.setItem('returnAnchor', JSON.stringify({ 
-          id, 
-          page: currentPage || 1,
-          scrollY: window.scrollY,
-          timestamp: Date.now()
-        }));
-      }
-    } catch {}
-  };
+  // Removed handleCardClick - now handled in MovieCard component
 
   const toggleShowMore = () => {
     setIsExpanded(!isExpanded);
@@ -205,7 +242,7 @@ function Shelf({ title, results, firstVisit, isSmall, currentPage, isMobile }: {
       <div style={{ background: '#FF4925', borderRadius: 16, padding: 12, position: 'relative', overflow: 'hidden', transition: 'all 0.3s ease', width: '100%', boxSizing: 'border-box' }}>
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cardsPerRow}, minmax(0, 1fr))`, gap: 12, width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}>
           {initialMovies.map((m) => (
-            <MovieCard key={m.id} m={m} isSmall={isSmall} firstVisit={firstVisit} onClick={() => handleCardClick(m.id, currentPage)} />
+            <MovieCard key={m.id} m={m} isSmall={isSmall} firstVisit={firstVisit} currentPage={currentPage} />
           ))}
         </div>
         
@@ -258,7 +295,7 @@ function Shelf({ title, results, firstVisit, isSmall, currentPage, isMobile }: {
           }}>
             <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cardsPerRow}, minmax(0, 1fr))`, gap: 12, width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}>
               {remainingMovies.map((m) => (
-                <MovieCard key={m.id} m={m} isSmall={isSmall} firstVisit={firstVisit} onClick={() => handleCardClick(m.id, currentPage)} />
+                <MovieCard key={m.id} m={m} isSmall={isSmall} firstVisit={firstVisit} currentPage={currentPage} />
               ))}
             </div>
             
@@ -475,16 +512,7 @@ export default function MoviesListPage() {
               <h2 style={{ margin: '4px 4px 12px', fontFamily: 'Anton SC, sans-serif', letterSpacing: 0.5, fontSize: 28, fontWeight: 400 }}>All movies</h2>
               <div style={{ display: 'grid', gridTemplateColumns: `repeat(${isMobile ? 3 : 6}, minmax(0, 1fr))`, gap: 12, width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0, gridAutoRows: 'min-content', gridAutoFlow: 'row' }}>
                 {popularResults.slice(0, Math.floor(popularResults.length / (isMobile ? 3 : 6)) * (isMobile ? 3 : 6)).map((m) => (
-                  <MovieCard key={m.id} m={m} isSmall={isSmall} onClick={() => {
-                    try {
-                      sessionStorage.setItem('returnAnchor', JSON.stringify({ 
-                        id: m.id, 
-                        page: page,
-                        scrollY: window.scrollY,
-                        timestamp: Date.now()
-                      }));
-                    } catch {}
-                  }} />
+                  <MovieCard key={m.id} m={m} isSmall={isSmall} currentPage={page} />
                 ))}
               </div>
             </div>
