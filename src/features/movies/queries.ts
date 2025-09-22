@@ -12,7 +12,7 @@ export const movieKeys = {
   search: (query: string, page: number) => [...movieKeys.searches(), query, page] as const,
 } as const;
 
-// Optimized query options with better caching strategies
+// Optimized query options with stale-while-revalidate logic
 export const popularMoviesOptions = (page: number) =>
   queryOptions({
     queryKey: movieKeys.list('popular', page),
@@ -22,6 +22,16 @@ export const popularMoviesOptions = (page: number) =>
     placeholderData: (previous) => previous, // keep previous page's data during pagination
     refetchOnWindowFocus: false, // prevent unnecessary refetches
     refetchOnMount: false, // use cached data if available
+    refetchOnReconnect: true, // refetch when coming back online
+    retry: (failureCount) => {
+      // Don't retry if offline
+      if (typeof window !== 'undefined' && !navigator.onLine) {
+        return false;
+      }
+      // Retry up to 3 times for other errors
+      return failureCount < 3;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
 export function usePopularMovies(page: number) {
@@ -37,6 +47,14 @@ export const trendingMoviesOptions = (page: number) =>
     placeholderData: (previous) => previous,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
+    refetchOnReconnect: true,
+    retry: (failureCount) => {
+      if (typeof window !== 'undefined' && !navigator.onLine) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
 export function useTrendingMovies(page: number) {
@@ -52,6 +70,14 @@ export const freeToWatchMoviesOptions = (page: number) =>
     placeholderData: (previous) => previous,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
+    refetchOnReconnect: true,
+    retry: (failureCount) => {
+      if (typeof window !== 'undefined' && !navigator.onLine) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
 export function useFreeToWatchMovies(page: number) {
@@ -66,6 +92,14 @@ export const movieDetailOptions = (id: number) =>
     gcTime: 1000 * 60 * 60 * 24, // 24 hours - keep movie details for a long time
     refetchOnWindowFocus: false,
     refetchOnMount: false,
+    refetchOnReconnect: true,
+    retry: (failureCount) => {
+      if (typeof window !== 'undefined' && !navigator.onLine) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
 export function useMovieDetail(id: number) {
@@ -81,6 +115,14 @@ export const searchMoviesOptions = (q: string, page: number) =>
     gcTime: 1000 * 60 * 15, // 15 minutes - shorter cache for search
     refetchOnWindowFocus: false,
     refetchOnMount: false,
+    refetchOnReconnect: true,
+    retry: (failureCount) => {
+      if (typeof window !== 'undefined' && !navigator.onLine) {
+        return false;
+      }
+      return failureCount < 3;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
 
 export function useSearchMovies(q: string, page: number) {

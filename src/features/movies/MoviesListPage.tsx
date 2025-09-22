@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect, useRef, memo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { usePopularMovies, useTrendingMovies, useFreeToWatchMovies } from "./queries";
 import { useMovieCard } from "./hooks/useMovieCard";
+import { useOffline } from "../../hooks/useOffline";
 import Button from "@mui/material/Button";
 
 // Skeleton Components
@@ -124,7 +125,7 @@ function useInViewFade(enabled: boolean) {
 }
 
 // ✅ Optimized MovieCard with prefetching
-const MovieCard = memo(function MovieCard({ 
+export const MovieCard = memo(function MovieCard({ 
   m, 
   isSmall, 
   firstVisit, 
@@ -344,6 +345,7 @@ function Shelf({ title, results, firstVisit, isSmall, currentPage, isMobile }: {
 export default function MoviesListPage() {
   const [params, setParams] = useSearchParams();
   const isInitialMountRef = useRef(true);
+  const isOffline = useOffline();
 
   // Add CSS animation for slide down effect
   useEffect(() => {
@@ -488,6 +490,22 @@ export default function MoviesListPage() {
       <div>
          <h1 style={{ fontFamily: 'Anton SC, sans-serif', fontSize: 45, letterSpacing: -0.2, marginBottom: 4, fontWeight: 400 }}>BROWSE MOVIES</h1>
          <p style={{ fontFamily: 'Exo, sans-serif', fontSize: 21, marginTop: 0, fontWeight: 600 }}>Find films you didn't know you were looking for.</p>
+         {isOffline && (
+           <div style={{
+             background: '#fef3c7',
+             border: '1px solid #f59e0b',
+             borderRadius: '8px',
+             padding: '8px 12px',
+             marginTop: '12px',
+             fontSize: '14px',
+             color: '#92400e',
+             display: 'flex',
+             alignItems: 'center',
+             gap: '8px'
+           }}>
+             📱 <span>You're offline • Showing cached data</span>
+           </div>
+         )}
       </div>
       {loadingPopular || loadingTrending || loadingFree ? (
         page <= 1 ? (

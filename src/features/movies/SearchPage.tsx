@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect, memo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useSearchMovies } from "./queries";
 import { useMovieCard } from "./hooks/useMovieCard";
+import { useOffline } from "../../hooks/useOffline";
 import Button from "@mui/material/Button";
 
 // Optimized Movie Card Component with prefetching
@@ -104,6 +105,7 @@ export default function SearchPage() {
   const pageParam = Number(params.get("page") ?? 1);
   const [page, setPage] = useState(pageParam);
   const [isSmall, setIsSmall] = useState(false);
+  const isOffline = useOffline();
   const { data, isLoading, isError, error, isFetching } = useSearchMovies(q, page);
 
   const results = useMemo(() => data?.results ?? [], [data]);
@@ -158,6 +160,22 @@ export default function SearchPage() {
         }}>
           {q ? `Results for "${q}"` : 'Search for movies to see results'}
         </p>
+        {isOffline && (
+          <div style={{
+            background: '#fef3c7',
+            border: '1px solid #f59e0b',
+            borderRadius: '8px',
+            padding: '8px 12px',
+            marginTop: '12px',
+            fontSize: '14px',
+            color: '#92400e',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}>
+            📱 <span>You're offline • Showing cached data</span>
+          </div>
+        )}
       </div>
 
       {q.length === 0 ? (
