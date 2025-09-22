@@ -1,7 +1,6 @@
 import { useMemo, useState, useEffect, memo } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useSearchMovies } from "./queries";
-import { useQueryClient } from "@tanstack/react-query";
 import { useMovieCard } from "./hooks/useMovieCard";
 import Button from "@mui/material/Button";
 
