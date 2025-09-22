@@ -1,7 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { usePopularMovies, useTrendingMovies, useFreeToWatchMovies } from "./queries";
-import { useQueryClient } from "@tanstack/react-query";
 import Button from "@mui/material/Button";
 
 // Skeleton Components
@@ -14,7 +13,7 @@ function MovieCardSkeleton({ isSmall }: { isSmall: boolean }) {
   };
 
   return (
-    <div style={{ background: '#fff', borderRadius: 12, overflow: 'hidden' }}>
+    <div style={{ background: '#fff', borderRadius: 16, overflow: 'hidden' }}>
       <div 
         style={{ 
           width: '100%', 
@@ -35,13 +34,16 @@ function MovieCardSkeleton({ isSmall }: { isSmall: boolean }) {
   );
 }
 
-function ShelfSkeleton({ title, isSmall }: { title: string; isSmall: boolean }) {
+function ShelfSkeleton({ title, isSmall, isMobile }: { title: string; isSmall: boolean; isMobile: boolean }) {
+  const cardsPerRow = isMobile ? 3 : 6;
+  const skeletonCount = isMobile ? 6 : 12;
+  
   return (
     <section style={{ marginBottom: 24 }}>
-      <h2 style={{ margin: '4px 4px 6px', fontFamily: 'Kanit, sans-serif', letterSpacing: 0.5, fontSize: 28, fontWeight: 700 }}>{title}</h2>
+       <h2 style={{ margin: '4px 4px 6px', fontFamily: 'Anton SC, sans-serif', letterSpacing: 0.5, fontSize: 28, fontWeight: 400 }}>{title}</h2>
       <div style={{ background: '#FF4925', borderRadius: 16, padding: 12, position: 'relative' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${isSmall ? 100 : 160}px, 1fr))`, gap: 12 }}>
-          {Array.from({ length: 12 }).map((_, index) => (
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cardsPerRow}, minmax(0, 1fr))`, gap: 12, width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}>
+          {Array.from({ length: skeletonCount }).map((_, index) => (
             <MovieCardSkeleton key={index} isSmall={isSmall} />
           ))}
         </div>
@@ -50,7 +52,7 @@ function ShelfSkeleton({ title, isSmall }: { title: string; isSmall: boolean }) 
   );
 }
 
-function MainPageSkeleton({ isSmall }: { isSmall: boolean }) {
+function MainPageSkeleton({ isSmall, isMobile }: { isSmall: boolean; isMobile: boolean }) {
   const keyframes = `
     @keyframes loading {
       0% { background-position: 200% 0; }
@@ -62,15 +64,15 @@ function MainPageSkeleton({ isSmall }: { isSmall: boolean }) {
     <>
       <style>{keyframes}</style>
       <div style={{ background: '#FF4925', padding: 16, borderRadius: 16 }}>
-        <ShelfSkeleton title="Trending" isSmall={isSmall} />
-        <ShelfSkeleton title="What's popular" isSmall={isSmall} />
-        <ShelfSkeleton title="Free to watch" isSmall={isSmall} />
+        <ShelfSkeleton title="Trending" isSmall={isSmall} isMobile={isMobile} />
+        <ShelfSkeleton title="What's popular" isSmall={isSmall} isMobile={isMobile} />
+        <ShelfSkeleton title="Free to watch" isSmall={isSmall} isMobile={isMobile} />
       </div>
     </>
   );
 }
 
-function AllMoviesPageSkeleton({ isSmall }: { isSmall: boolean }) {
+function AllMoviesPageSkeleton({ isSmall, isMobile }: { isSmall: boolean; isMobile: boolean }) {
   const keyframes = `
     @keyframes loading {
       0% { backg-position: 200% 0; }
@@ -82,9 +84,9 @@ function AllMoviesPageSkeleton({ isSmall }: { isSmall: boolean }) {
     <>
       <style>{keyframes}</style>
       <div style={{ background: '#FF4925', padding: 16, borderRadius: 16 }}>
-        <h2 style={{ margin: '4px 4px 12px', fontFamily: 'Kanit, sans-serif', letterSpacing: 0.5, fontSize: 28, fontWeight: 700 }}>All movies</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${isSmall ? 100 : 160}px, 1fr))`, gap: 12 }}>
-          {Array.from({ length: 20 }).map((_, index) => (
+         <h2 style={{ margin: '4px 4px 12px', fontFamily: 'Anton SC, sans-serif', letterSpacing: 0.5, fontSize: 28, fontWeight: 400 }}>All movies</h2>
+      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${isMobile ? 3 : 6}, minmax(0, 1fr))`, gap: 12, width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0, gridAutoRows: 'min-content', gridAutoFlow: 'row' }}>
+        {Array.from({ length: isMobile ? 9 : 18 }).map((_, index) => (
             <MovieCardSkeleton key={index} isSmall={isSmall} />
           ))}
         </div>
@@ -132,10 +134,14 @@ function MovieCard({ m, isSmall, firstVisit, onClick }: { m: any; isSmall: boole
         {...(firstVisit ? { 'data-fade': true as unknown as undefined } : {})}
         style={{
           background: '#fff',
-          borderRadius: 12,
+          borderRadius: 16,
           overflow: 'hidden',
-          transition: 'all 250ms ease',
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
           cursor: 'pointer',
+          width: '100%',
+          maxWidth: '100%',
+          height: 'auto',
+          boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06)',
           ...(firstVisit ? { filter: 'blur(6px)', opacity: 0, transform: 'translateY(8px)' } : {})
         }}
         onMouseEnter={(e) => {
@@ -148,57 +154,150 @@ function MovieCard({ m, isSmall, firstVisit, onClick }: { m: any; isSmall: boole
         }}
       >
         {m.poster_path ? (
-          <img alt={m.title} src={`https://image.tmdb.org/t/p/w342${m.poster_path}`} style={{ width: '100%', height: (isSmall ? 160 : 240), objectFit: 'cover', display: 'block' }} />
+          <img alt={m.title} src={`https://image.tmdb.org/t/p/w342${m.poster_path}`} style={{ width: '100%', height: (isSmall ? 160 : 240), objectFit: 'cover', display: 'block', maxWidth: '100%' }} />
         ) : (
-          <div style={{ height: (isSmall ? 160 : 240), background: '#ddd' }} />
+          <div style={{ height: (isSmall ? 160 : 240), background: '#ddd', maxWidth: '100%' }} />
         )}
-        <div style={{ padding: 8 }}>
-          <div style={{ fontWeight: 600, fontSize: 14, height: 20, lineHeight: '20px', whiteSpace: 'nowrap', overflow: 'hidden', fontFamily: 'Maitree, serif', WebkitMaskImage: 'linear-gradient(90deg, #000 75%, transparent 100%)', maskImage: 'linear-gradient(90deg, #000 75%, transparent 100%)' }}>{m.title}</div>
-        </div>
       </div>
     </Link>
   );
 }
 
-function Shelf({ title, results, firstVisit, isSmall }: { title: string; results: any[]; firstVisit: boolean; isSmall: boolean }) {
-  const INITIAL_VISIBLE = 12;
-  const [visible, setVisible] = useState(firstVisit ? INITIAL_VISIBLE : results.length);
-  useEffect(() => {
-    setVisible(firstVisit ? INITIAL_VISIBLE : results.length);
-  }, [results, firstVisit]);
+function Shelf({ title, results, firstVisit, isSmall, currentPage, isMobile }: { title: string; results: any[]; firstVisit: boolean; isSmall: boolean; currentPage: number; isMobile: boolean }) {
+  const cardsPerRow = isMobile ? 3 : 6;
+  const INITIAL_VISIBLE = isMobile ? 6 : 12; // 2 rows of movies
+  const [isExpanded, setIsExpanded] = useState(false);
+  
   useInViewFade(firstVisit);
-  const shown = results.slice(0, visible);
-  const canShowMore = visible < results.length;
-  const preview = canShowMore ? results.slice(visible, Math.min(visible + 6, results.length)) : [];
+  const canShowMore = results.length > INITIAL_VISIBLE;
+  const initialMovies = results.slice(0, INITIAL_VISIBLE);
+  const remainingMovies = results.slice(INITIAL_VISIBLE);
 
-  const handleCardClick = (id?: number) => {
+  const handleCardClick = (id?: number, currentPage?: number) => {
     try {
       if (typeof id === 'number') {
-        sessionStorage.setItem('returnAnchor', JSON.stringify({ id }));
+        sessionStorage.setItem('returnAnchor', JSON.stringify({ 
+          id, 
+          page: currentPage || 1,
+          scrollY: window.scrollY,
+          timestamp: Date.now()
+        }));
       }
     } catch {}
   };
 
+  const toggleShowMore = () => {
+    setIsExpanded(!isExpanded);
+  };
+
   return (
     <section style={{ marginBottom: 24 }}>
-      <h2 style={{ margin: '4px 4px 6px', fontFamily: 'Kanit, sans-serif', letterSpacing: 0.5, fontSize: 28, fontWeight: 700 }}>{title}</h2>
-      <div style={{ background: '#FF4925', borderRadius: 16, padding: 12, position: 'relative' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${isSmall ? 100 : 160}px, 1fr))`, gap: 12 }}>
-          {shown.map((m) => (
-            <MovieCard key={m.id} m={m} isSmall={isSmall} firstVisit={firstVisit} onClick={() => handleCardClick(m.id)} />
+       <h2 style={{ 
+         margin: '4px 4px 6px', 
+         fontFamily: 'Kanit, sans-serif', 
+         letterSpacing: 0.5, 
+         fontSize: 32, 
+         fontWeight: 700,
+         color: 'black',
+         padding: '8px 16px',
+         display: 'inline-block'
+       }}>{title}</h2>
+      <div style={{ background: '#FF4925', borderRadius: 16, padding: 12, position: 'relative', overflow: 'hidden', transition: 'all 0.3s ease', width: '100%', boxSizing: 'border-box' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cardsPerRow}, minmax(0, 1fr))`, gap: 12, width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}>
+          {initialMovies.map((m) => (
+            <MovieCard key={m.id} m={m} isSmall={isSmall} firstVisit={firstVisit} onClick={() => handleCardClick(m.id, currentPage)} />
           ))}
         </div>
-        {canShowMore && (
+        
+        {canShowMore && !isExpanded && (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${isSmall ? 100 : 160}px, 1fr))`, gap: 12, marginTop: 12, filter: 'blur(3px)', opacity: 0.8, pointerEvents: 'none', maxHeight: (isSmall ? 110 : 140), overflow: 'hidden' }}>
-              {preview.map((m) => (
-                <MovieCard key={`preview-${m.id}`} m={m} isSmall={isSmall} />
-              ))}
-            </div>
-            <div style={{ position: 'absolute', right: 16, bottom: 16 }}>
-              <Button variant="contained" disableElevation onClick={() => setVisible(results.length)}>Show more</Button>
+            {/* Show More Button - positioned after 2 rows */}
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              marginTop: 16,
+              transition: 'all 0.3s ease'
+            }}>
+              <Button 
+                variant="contained" 
+                disableElevation 
+                onClick={toggleShowMore}
+                style={{
+                  background: 'white',
+                  color: '#FF4925',
+                  fontFamily: 'Hanken Grotesk, sans-serif',
+                  fontWeight: 'bold',
+                  borderRadius: '25px',
+                  padding: '12px 24px',
+                  textTransform: 'none',
+                  fontSize: '16px',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                  transition: 'all 0.3s ease',
+                  minWidth: '120px'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = '#f5f5f5';
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'white';
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+              >
+                Show more
+              </Button>
             </div>
           </>
+        )}
+        
+        {canShowMore && isExpanded && (
+          <div style={{ 
+            marginTop: 12,
+            animation: 'slideDown 0.4s ease-out',
+            transition: 'all 0.3s ease'
+          }}>
+            <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cardsPerRow}, minmax(0, 1fr))`, gap: 12, width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}>
+              {remainingMovies.map((m) => (
+                <MovieCard key={m.id} m={m} isSmall={isSmall} firstVisit={firstVisit} onClick={() => handleCardClick(m.id, currentPage)} />
+              ))}
+            </div>
+            
+            {/* Show Less Button */}
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              marginTop: 16,
+              transition: 'all 0.3s ease'
+            }}>
+              <Button 
+                variant="outlined" 
+                onClick={toggleShowMore}
+                style={{
+                  background: 'rgba(59, 130, 246, 0.1)',
+                  backdropFilter: 'blur(10px)',
+                  border: '1px solid rgba(59, 130, 246, 0.2)',
+                  color: 'white',
+                  fontWeight: 'bold',
+                  borderRadius: '25px',
+                  padding: '8px 16px',
+                  textTransform: 'none',
+                  fontSize: '14px',
+                  boxShadow: '0 8px 32px rgba(59, 130, 246, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.transform = 'scale(1)';
+                }}
+              >
+                Show less
+              </Button>
+            </div>
+          </div>
         )}
       </div>
     </section>
@@ -208,6 +307,42 @@ function Shelf({ title, results, firstVisit, isSmall }: { title: string; results
 export default function MoviesListPage() {
   const [params, setParams] = useSearchParams();
   const isInitialMountRef = useRef(true);
+
+  // Add CSS animation for slide down effect
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-20px);
+          max-height: 0;
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+          max-height: 1000px;
+        }
+      }
+      
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      if (document.head.contains(style)) {
+        document.head.removeChild(style);
+      }
+    };
+  }, []);
 
   const getInitialPage = () => {
     const urlPage = params.get("page");
@@ -224,8 +359,8 @@ export default function MoviesListPage() {
   });
 
   const { data: popular, isLoading: loadingPopular, isError: isErrorPopular, error: errorPopular, isFetching: fetchingPopular } = usePopularMovies(page);
-  const { data: trending, isLoading: loadingTrending, isError: isErrorTrending, error: errorTrending } = useTrendingMovies(1);
-  const { data: free, isLoading: loadingFree, isError: isErrorFree, error: errorFree } = useFreeToWatchMovies(1);
+  const { data: trending, isLoading: loadingTrending } = useTrendingMovies(1);
+  const { data: free, isLoading: loadingFree } = useFreeToWatchMovies(1);
 
   const totalPages = popular?.total_pages ?? 1;
   const canPrev = page > 1;
@@ -267,11 +402,46 @@ export default function MoviesListPage() {
     setFirstVisit(false);
   }, []);
 
-  const client = useQueryClient();
-  const [isSmall, setIsSmall] = useState<boolean>(() => (typeof window !== 'undefined' ? window.innerWidth <= 360 : false));
+  // Handle return navigation from movie detail page
+  useEffect(() => {
+    try {
+      const returnData = sessionStorage.getItem('returnAnchor');
+      if (returnData) {
+        const { page: returnPage, scrollY: returnScrollY, timestamp } = JSON.parse(returnData);
+        const now = Date.now();
+        // Only restore if the return data is recent (within 5 minutes)
+        if (returnPage && (now - timestamp) < 300000) {
+          if (returnPage !== page) {
+            setPage(returnPage);
+          }
+          // Restore scroll position after content is loaded
+          if (returnScrollY !== undefined) {
+            const restoreScroll = () => {
+              window.scrollTo(0, returnScrollY);
+            };
+            
+            // Try multiple times to ensure content is loaded
+            setTimeout(restoreScroll, 100);
+            setTimeout(restoreScroll, 300);
+            setTimeout(restoreScroll, 500);
+          }
+        }
+        // Clear the return data after processing
+        sessionStorage.removeItem('returnAnchor');
+      }
+    } catch (error) {
+      // Ignore parsing errors
+    }
+  }, []);
+
+  const [isSmall, setIsSmall] = useState<boolean>(() => (typeof window !== 'undefined' ? window.innerWidth <= 640 : false));
+  const [isMobile, setIsMobile] = useState<boolean>(() => (typeof window !== 'undefined' ? window.innerWidth <= 480 : false));
 
   useEffect(() => {
-    const onResize = () => setIsSmall(window.innerWidth <= 360);
+    const onResize = () => {
+      setIsSmall(window.innerWidth <= 640);
+      setIsMobile(window.innerWidth <= 480);
+    };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, []);
@@ -279,14 +449,14 @@ export default function MoviesListPage() {
   return (
     <div>
       <div>
-        <h1 style={{ fontFamily: 'Kanit, sans-serif', fontSize: 45, letterSpacing: -0.2, marginBottom: 4 }}>BROWSE MOVIES</h1>
-        <p style={{ fontFamily: 'Maitree, serif', fontSize: 21, marginTop: 0, fontWeight: 600 }}>Browse genres. Or directors. Or double-award-winners. Find films you didn't know you were looking for.</p>
+         <h1 style={{ fontFamily: 'Anton SC, sans-serif', fontSize: 45, letterSpacing: -0.2, marginBottom: 4, fontWeight: 400 }}>BROWSE MOVIES</h1>
+         <p style={{ fontFamily: 'Exo, sans-serif', fontSize: 21, marginTop: 0, fontWeight: 600 }}>Find films you didn't know you were looking for.</p>
       </div>
       {loadingPopular || loadingTrending || loadingFree ? (
         page <= 1 ? (
-          <MainPageSkeleton isSmall={isSmall} />
+          <MainPageSkeleton isSmall={isSmall} isMobile={isMobile} />
         ) : (
-          <AllMoviesPageSkeleton isSmall={isSmall} />
+          <AllMoviesPageSkeleton isSmall={isSmall} isMobile={isMobile} />
         )
       ) : isErrorPopular ? (
         <div style={{ color: "crimson" }}>{(errorPopular as any)?.message || "Error"}</div>
@@ -296,18 +466,23 @@ export default function MoviesListPage() {
         <>
           {page <= 1 ? (
             <div style={{ background: '#FF4925', padding: 16, borderRadius: 60 }}>
-              <Shelf title="Trending" results={trendingResults.slice(0, 20)} firstVisit={firstVisit} isSmall={isSmall} />
-              <Shelf title="What's popular" results={popularResults.slice(0, 20)} firstVisit={firstVisit} isSmall={isSmall} />
-              <Shelf title="Free to watch" results={freeResults.slice(0, 20)} firstVisit={firstVisit} isSmall={isSmall} />
+              <Shelf title="Trending" results={trendingResults.slice(0, 20)} firstVisit={firstVisit} isSmall={isSmall} currentPage={page} isMobile={isMobile} />
+              <Shelf title="What's popular" results={popularResults.slice(0, 20)} firstVisit={firstVisit} isSmall={isSmall} currentPage={page} isMobile={isMobile} />
+              <Shelf title="Free to watch" results={freeResults.slice(0, 20)} firstVisit={firstVisit} isSmall={isSmall} currentPage={page} isMobile={isMobile} />
             </div>
           ) : (
             <div style={{ background: '#FF4925', padding: 16, borderRadius: 60 }}>
-              <h2 style={{ margin: '4px 4px 12px', fontFamily: 'Kanit, sans-serif', letterSpacing: 0.5, fontSize: 28, fontWeight: 700 }}>All movies</h2>
-              <div style={{ display: 'grid', gridTemplateColumns: `repeat(auto-fill, minmax(${isSmall ? 100 : 160}px, 1fr))`, gap: 12 }}>
-                {popularResults.map((m) => (
+              <h2 style={{ margin: '4px 4px 12px', fontFamily: 'Anton SC, sans-serif', letterSpacing: 0.5, fontSize: 28, fontWeight: 400 }}>All movies</h2>
+              <div style={{ display: 'grid', gridTemplateColumns: `repeat(${isMobile ? 3 : 6}, minmax(0, 1fr))`, gap: 12, width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0, gridAutoRows: 'min-content', gridAutoFlow: 'row' }}>
+                {popularResults.slice(0, Math.floor(popularResults.length / (isMobile ? 3 : 6)) * (isMobile ? 3 : 6)).map((m) => (
                   <MovieCard key={m.id} m={m} isSmall={isSmall} onClick={() => {
                     try {
-                      sessionStorage.setItem('returnAnchor', JSON.stringify({ id: m.id }));
+                      sessionStorage.setItem('returnAnchor', JSON.stringify({ 
+                        id: m.id, 
+                        page: page,
+                        scrollY: window.scrollY,
+                        timestamp: Date.now()
+                      }));
                     } catch {}
                   }} />
                 ))}
@@ -315,13 +490,60 @@ export default function MoviesListPage() {
             </div>
           )}
           <div style={{ display: "flex", gap: 8, justifyContent: "center", alignItems: "center", marginTop: 16 }}>
-            <Button variant="contained" disableElevation disabled={!canPrev || fetchingPopular} onClick={() => {
+            <Button 
+              variant="contained" 
+              disableElevation 
+              disabled={!canPrev || fetchingPopular} 
+              onClick={() => {
               setPage((p) => Math.max(1, p - 1));
-            }}>Prev</Button>
-            <span>Page {page} {fetchingPopular ? "(updating...)" : ""}</span>
-            <Button variant="contained" disableElevation disabled={!canNext || fetchingPopular} onClick={() => {
+              }}
+              style={{
+                background: 'rgba(59, 130, 246, 0.15)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+                color: '#FF4925',
+                fontWeight: 'bold',
+                borderRadius: '30px',
+                padding: '12px 24px',
+                textTransform: 'none',
+                fontSize: '16px',
+                boxShadow: '0 8px 32px rgba(59, 130, 246, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.4)',
+                transition: 'all 0.3s ease'
+              }}
+            >Prev</Button>
+            <span style={{ 
+              background: 'rgba(59, 130, 246, 0.1)',
+              backdropFilter: 'blur(10px)',
+              border: '2px solid #000000',
+              borderTop: '1px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: '25px',
+              padding: '12px 24px',
+              color: '#6b7280',
+              fontWeight: 'bold',
+              fontSize: '16px',
+              boxShadow: '0 4px 16px rgba(59, 130, 246, 0.15)'
+            }}>Page {page} {fetchingPopular ? "(updating...)" : ""}</span>
+            <Button 
+              variant="contained" 
+              disableElevation 
+              disabled={!canNext || fetchingPopular} 
+              onClick={() => {
               setPage((p) => p + 1);
-            }}>Next</Button>
+              }}
+              style={{
+                background: 'rgba(59, 130, 246, 0.15)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+                color: '#FF4925',
+                fontWeight: 'bold',
+                borderRadius: '30px',
+                padding: '12px 24px',
+                textTransform: 'none',
+                fontSize: '16px',
+                boxShadow: '0 8px 32px rgba(59, 130, 246, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.4)',
+                transition: 'all 0.3s ease'
+              }}
+            >Next</Button>
           </div>
         </>
       )}

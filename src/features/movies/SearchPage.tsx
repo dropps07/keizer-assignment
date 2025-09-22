@@ -1,14 +1,91 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { useSearchMovies } from "./queries";
 import { useQueryClient } from "@tanstack/react-query";
 import { prefetchMovieDetail } from "./queries";
+import Button from "@mui/material/Button";
+
+// Movie Card Component (matching MoviesListPage style)
+function MovieCard({ m, isSmall, onClick }: { m: any; isSmall: boolean; onClick: () => void }) {
+  return (
+    <div 
+      onClick={onClick}
+      style={{ 
+        background: '#fff', 
+        borderRadius: 16, 
+        overflow: 'hidden', 
+        cursor: 'pointer',
+        transition: 'all 0.3s ease',
+        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column'
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.transform = 'translateY(-4px)';
+        e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.15)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.transform = 'translateY(0)';
+        e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)';
+      }}
+    >
+      {m.poster_path ? (
+        <img 
+          alt={m.title} 
+          src={`https://image.tmdb.org/t/p/w342${m.poster_path}`} 
+          style={{ 
+            width: '100%', 
+            height: isSmall ? 160 : 240,
+            objectFit: 'cover',
+            display: 'block'
+          }} 
+        />
+      ) : (
+        <div style={{ 
+          height: isSmall ? 160 : 240, 
+          background: '#ddd',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: '#666',
+          fontSize: '14px'
+        }}>
+          No Image
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Skeleton Component
+function MovieCardSkeleton({ isSmall }: { isSmall: boolean }) {
+  const skeletonStyle = {
+    background: 'linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%)',
+    backgroundSize: '200% 100%',
+    animation: 'loading 1.5s infinite',
+    borderRadius: '8px'
+  };
+
+  return (
+    <div style={{ background: '#fff', borderRadius: 16, overflow: 'hidden' }}>
+      <div 
+        style={{ 
+          width: '100%', 
+          height: (isSmall ? 160 : 240), 
+          ...skeletonStyle 
+        }} 
+      />
+    </div>
+  );
+}
 
 export default function SearchPage() {
   const [params, setParams] = useSearchParams();
   const q = params.get("q") ?? "";
   const pageParam = Number(params.get("page") ?? 1);
   const [page, setPage] = useState(pageParam);
+  const [isSmall, setIsSmall] = useState(false);
   const client = useQueryClient();
   const { data, isLoading, isError, error, isFetching } = useSearchMovies(q, page);
 
@@ -17,19 +94,20 @@ export default function SearchPage() {
   const canPrev = page > 1;
   const canNext = page < totalPages;
 
-  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const form = e.currentTarget;
-    const input = form.elements.namedItem("q") as HTMLInputElement;
-    const nextQ = input.value.trim();
-    setPage(1);
-    setParams((p) => {
-      const next = new URLSearchParams(p);
-      if (nextQ) next.set("q", nextQ); else next.delete("q");
-      next.set("page", "1");
-      return next;
-    });
-  }
+  // Responsive state
+  useEffect(() => {
+    const checkSize = () => setIsSmall(window.innerWidth < 640);
+    checkSize();
+    window.addEventListener('resize', checkSize);
+    return () => window.removeEventListener('resize', checkSize);
+  }, []);
+
+  // Ensure complete rows (6 movies per row)
+  const displayResults = useMemo(() => {
+    if (!results.length) return [];
+    const completeRows = Math.floor(results.length / 6);
+    return results.slice(0, completeRows * 6);
+  }, [results]);
 
   function goPage(nextPage: number) {
     setPage(nextPage);
@@ -40,44 +118,187 @@ export default function SearchPage() {
     });
   }
 
+  const handleCardClick = (id: number) => {
+    try {
+      sessionStorage.setItem('returnAnchor', JSON.stringify({ 
+        id, 
+        page,
+        scrollY: window.scrollY,
+        timestamp: Date.now()
+      }));
+    } catch {}
+  };
+
   return (
-    <div>
-      <h1>Search Movies</h1>
-      <form onSubmit={onSubmit} style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-        <input name="q" defaultValue={q} placeholder="Search..." />
-        <button type="submit">Search</button>
-      </form>
+    <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 16px' }}>
+      <div style={{ marginBottom: 24 }}>
+        <h1 style={{ 
+          fontFamily: 'Anton SC, sans-serif', 
+          fontSize: 45, 
+          letterSpacing: -0.2, 
+          marginBottom: 4, 
+          fontWeight: 400 
+        }}>
+          SEARCH RESULTS
+        </h1>
+        <p style={{ 
+          fontFamily: 'Exo, sans-serif', 
+          fontSize: 21, 
+          marginTop: 0, 
+          fontWeight: 600,
+          color: '#666'
+        }}>
+          {q ? `Results for "${q}"` : 'Search for movies to see results'}
+        </p>
+      </div>
 
       {q.length === 0 ? (
-        <div>Type a query to search.</div>
+        <div style={{ 
+          textAlign: 'center', 
+          padding: '60px 20px',
+          color: '#666',
+          fontSize: '18px',
+          fontFamily: 'Maitree, serif'
+        }}>
+          Enter a search query to find movies
+        </div>
       ) : isLoading ? (
-        <div>Loading...</div>
-      ) : isError ? (
-        <div style={{ color: "crimson" }}>{(error as any)?.message || "Error"}</div>
-      ) : results.length === 0 ? (
-        <div>No results.</div>
-      ) : (
-        <>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(180px, 1fr))", gap: 12 }}>
-            {results.map((m) => (
-              <Link key={m.id} to={`/movies/${m.id}`} onMouseEnter={() => prefetchMovieDetail(client, m.id)} style={{ textDecoration: "none", color: "inherit" }}>
-                <div style={{ background: "#fff", borderRadius: 8, overflow: "hidden" }}>
-                  {m.poster_path ? (
-                    <img alt={m.title} src={`https://image.tmdb.org/t/p/w342${m.poster_path}`} style={{ width: "100%", display: "block" }} />
-                  ) : (
-                    <div style={{ height: 256, background: "#ddd" }} />
-                  )}
-                  <div style={{ padding: 8 }}>
-                    <div style={{ fontWeight: 600, fontSize: 14 }}>{m.title}</div>
-                  </div>
-                </div>
-              </Link>
+        <div style={{ 
+          background: '#FF4925', 
+          borderRadius: 16, 
+          padding: 12, 
+          position: 'relative', 
+          overflow: 'hidden', 
+          transition: 'all 0.3s ease', 
+          width: '100%', 
+          boxSizing: 'border-box' 
+        }}>
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', 
+            gap: 12, 
+            width: '100%', 
+            maxWidth: '100%', 
+            boxSizing: 'border-box', 
+            minWidth: 0 
+          }}>
+            {Array.from({ length: 18 }).map((_, index) => (
+              <MovieCardSkeleton key={index} isSmall={isSmall} />
             ))}
           </div>
+        </div>
+      ) : isError ? (
+        <div style={{ 
+          color: "crimson", 
+          textAlign: 'center',
+          padding: '40px 20px',
+          fontSize: '18px',
+          fontFamily: 'Maitree, serif'
+        }}>
+          {(error as any)?.message || "Error loading search results"}
+        </div>
+      ) : results.length === 0 ? (
+        <div style={{ 
+          textAlign: 'center', 
+          padding: '60px 20px',
+          color: '#666',
+          fontSize: '18px',
+          fontFamily: 'Maitree, serif'
+        }}>
+          No movies found for "{q}"
+        </div>
+      ) : (
+        <>
+          <div style={{ 
+            background: '#FF4925', 
+            borderRadius: 16, 
+            padding: 12, 
+            position: 'relative', 
+            overflow: 'hidden', 
+            transition: 'all 0.3s ease', 
+            width: '100%', 
+            boxSizing: 'border-box' 
+          }}>
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', 
+              gap: 12, 
+              width: '100%', 
+              maxWidth: '100%', 
+              boxSizing: 'border-box', 
+              minWidth: 0,
+              gridAutoRows: 'min-content',
+              gridAutoFlow: 'row'
+            }}>
+              {displayResults.map((m) => (
+                <Link 
+                  key={m.id} 
+                  to={`/movies/${m.id}`} 
+                  onMouseEnter={() => prefetchMovieDetail(client, m.id)} 
+                  style={{ textDecoration: 'none', color: 'inherit' }}
+                >
+                  <MovieCard 
+                    m={m} 
+                    isSmall={isSmall} 
+                    onClick={() => handleCardClick(m.id)} 
+                  />
+                </Link>
+              ))}
+            </div>
+          </div>
+          
+          {/* Pagination */}
           <div style={{ display: "flex", gap: 8, justifyContent: "center", alignItems: "center", marginTop: 16 }}>
-            <button disabled={!canPrev || isFetching} onClick={() => goPage(Math.max(1, page - 1))}>Prev</button>
-            <span>Page {page} {isFetching ? "(updating...)" : ""}</span>
-            <button disabled={!canNext || isFetching} onClick={() => goPage(page + 1)}>Next</button>
+            <Button 
+              variant="contained" 
+              disableElevation 
+              disabled={!canPrev || isFetching} 
+              onClick={() => goPage(Math.max(1, page - 1))}
+              style={{
+                background: 'rgba(59, 130, 246, 0.15)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+                color: '#FF4925',
+                fontWeight: 'bold',
+                borderRadius: '30px',
+                padding: '12px 24px',
+                textTransform: 'none',
+                fontSize: '16px',
+                boxShadow: '0 8px 32px rgba(59, 130, 246, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.4)',
+                transition: 'all 0.3s ease'
+              }}
+            >Prev</Button>
+            <span style={{ 
+              background: 'rgba(59, 130, 246, 0.1)',
+              backdropFilter: 'blur(10px)',
+              border: '2px solid #000000',
+              borderTop: '1px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: '25px',
+              padding: '12px 24px',
+              color: '#6b7280',
+              fontWeight: 'bold',
+              fontSize: '16px',
+              boxShadow: '0 4px 16px rgba(59, 130, 246, 0.15)'
+            }}>Page {page} {isFetching ? "(updating...)" : ""}</span>
+            <Button 
+              variant="contained" 
+              disableElevation 
+              disabled={!canNext || isFetching} 
+              onClick={() => goPage(page + 1)}
+              style={{
+                background: 'rgba(59, 130, 246, 0.15)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(59, 130, 246, 0.3)',
+                color: '#FF4925',
+                fontWeight: 'bold',
+                borderRadius: '30px',
+                padding: '12px 24px',
+                textTransform: 'none',
+                fontSize: '16px',
+                boxShadow: '0 8px 32px rgba(59, 130, 246, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.4)',
+                transition: 'all 0.3s ease'
+              }}
+            >Next</Button>
           </div>
         </>
       )}
