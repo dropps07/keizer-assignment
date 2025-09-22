@@ -1,6 +1,6 @@
 import { useQuery, queryOptions } from "@tanstack/react-query";
 import { fetchCharacters } from "./api";
-import type { CharactersParams, CharactersResponse } from "./api";
+import type { CharactersParams } from "./api";
 
 const charactersKey = (params: CharactersParams) => ["characters", params.page ?? 1, params.name ?? ""] as const;
 

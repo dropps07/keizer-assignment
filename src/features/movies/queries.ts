@@ -1,6 +1,6 @@
-import { useInfiniteQuery, useQuery, QueryClient, queryOptions } from "@tanstack/react-query";
+import { useQuery, QueryClient, queryOptions } from "@tanstack/react-query";
 import { fetchMovieDetail, fetchPopularMovies, searchMovies, fetchTrendingMovies, fetchFreeToWatchMovies } from "./api";
-import type { MoviesPage, Movie } from "./api";
+
 
 export const popularMoviesOptions = (page: number) =>
   queryOptions({
