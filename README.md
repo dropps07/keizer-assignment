@@ -1,4 +1,4 @@
-# Keizer Assignment — Movie Discovery Platform 🎬
+# Keizer Assignment
 
 Keizer is a modern **React-based movie discovery application** that provides users with an ui to **browse, search, and explore movies** using **The Movie Database (TMDB) API**.  
 The application has search capabilities, responsive design, and optimized ui/ux.
