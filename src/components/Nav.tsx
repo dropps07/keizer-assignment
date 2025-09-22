@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useDebounce } from '../hooks/useDebounce';
 
 type Suggestion = string | { id?: string; title?: string; name?: string; url?: string };
 
 export default function Nav() {
+  const navigate = useNavigate();
+  
   // injecting Google Fonts 
   useEffect(() => {
     const styleId = 'gf-import-browse';
@@ -157,7 +160,7 @@ export default function Nav() {
       window.location.href = s.url;
       return;
     }
-    window.location.href = `/search?q=${encodeURIComponent(label)}`;
+    navigate(`/search?q=${encodeURIComponent(label)}`);
   };
 
   const handleSearchIconClick = () => {
@@ -172,7 +175,7 @@ export default function Nav() {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
-      window.location.href = `/search?q=${encodeURIComponent(query.trim())}`;
+      navigate(`/search?q=${encodeURIComponent(query.trim())}`);
     }
   };
 
@@ -204,7 +207,7 @@ export default function Nav() {
         e.preventDefault();
         onSelect(suggestions[highlightedIndex]);
       } else if (query.trim()) {
-        window.location.href = `/search?q=${encodeURIComponent(query.trim())}`;
+        navigate(`/search?q=${encodeURIComponent(query.trim())}`);
       }
     } else if (e.key === 'Escape') {
       setOpen(false);
@@ -227,7 +230,7 @@ export default function Nav() {
           <span style={{ whiteSpace: 'nowrap' }}>Keizer</span>
         </span>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-          <a href="/movies" style={{ 
+          <Link to="/movies" style={{ 
             display: 'inline-block', 
             width: 'max-content', 
             height: 'max-content', 
@@ -242,7 +245,7 @@ export default function Nav() {
             transition: 'all 150ms', 
             textDecoration: 'none', 
             fontFamily: 'Kanit, sans-serif' 
-          }} onMouseDown={(e) => { (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(1px)'; }} onMouseUp={(e) => { (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(0)'; }}>Browse</a>
+          }} onMouseDown={(e) => { (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(1px)'; }} onMouseUp={(e) => { (e.currentTarget as HTMLAnchorElement).style.transform = 'translateY(0)'; }}>Browse</Link>
           <div
             ref={wrapperRef}
             style={{

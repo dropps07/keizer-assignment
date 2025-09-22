@@ -239,7 +239,7 @@ function Shelf({ title, results, firstVisit, isSmall, currentPage, isMobile }: {
          padding: '8px 16px',
          display: 'inline-block'
        }}>{title}</h2>
-      <div style={{ background: '#FF4925', borderRadius: 16, padding: 12, position: 'relative', overflow: 'hidden', transition: 'all 0.3s ease', width: '100%', boxSizing: 'border-box' }}>
+      <div style={{ background: '#FF4925', borderRadius: 16, padding: 2, position: 'relative', overflow: 'hidden', transition: 'all 0.3s ease', width: '100%', boxSizing: 'border-box' }}>
         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cardsPerRow}, minmax(0, 1fr))`, gap: 12, width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0 }}>
           {initialMovies.map((m) => (
             <MovieCard key={m.id} m={m} isSmall={isSmall} firstVisit={firstVisit} currentPage={currentPage} />
@@ -502,13 +502,13 @@ export default function MoviesListPage() {
       ) : (
         <>
           {page <= 1 ? (
-            <div style={{ background: '#FF4925', padding: 16, borderRadius: 60 }}>
+            <div style={{ background: '#FF4925', padding: 20, borderRadius: 60 }}>
               <Shelf title="Trending" results={trendingResults.slice(0, 20)} firstVisit={firstVisit} isSmall={isSmall} currentPage={page} isMobile={isMobile} />
               <Shelf title="What's popular" results={popularResults.slice(0, 20)} firstVisit={firstVisit} isSmall={isSmall} currentPage={page} isMobile={isMobile} />
               <Shelf title="Free to watch" results={freeResults.slice(0, 20)} firstVisit={firstVisit} isSmall={isSmall} currentPage={page} isMobile={isMobile} />
             </div>
           ) : (
-            <div style={{ background: '#FF4925', padding: 16, borderRadius: 60 }}>
+            <div style={{ background: '#FF4925', padding: 20, borderRadius: 60 }}>
               <h2 style={{ margin: '4px 4px 12px', fontFamily: 'Anton SC, sans-serif', letterSpacing: 0.5, fontSize: 28, fontWeight: 400 }}>All movies</h2>
               <div style={{ display: 'grid', gridTemplateColumns: `repeat(${isMobile ? 3 : 6}, minmax(0, 1fr))`, gap: 12, width: '100%', maxWidth: '100%', boxSizing: 'border-box', minWidth: 0, gridAutoRows: 'min-content', gridAutoFlow: 'row' }}>
                 {popularResults.slice(0, Math.floor(popularResults.length / (isMobile ? 3 : 6)) * (isMobile ? 3 : 6)).map((m) => (
@@ -578,3 +578,4 @@ export default function MoviesListPage() {
     </div>
   );
 }
+

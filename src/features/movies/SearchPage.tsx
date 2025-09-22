@@ -174,7 +174,7 @@ export default function SearchPage() {
         <div style={{ 
           background: '#FF4925', 
           borderRadius: 16, 
-          padding: 12, 
+          padding: 16, 
           position: 'relative', 
           overflow: 'hidden', 
           transition: 'all 0.3s ease', 
@@ -220,7 +220,7 @@ export default function SearchPage() {
           <div style={{ 
             background: '#FF4925', 
             borderRadius: 16, 
-            padding: 12, 
+            padding: 16, 
             position: 'relative', 
             overflow: 'hidden', 
             transition: 'all 0.3s ease', 
