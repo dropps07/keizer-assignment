@@ -104,7 +104,8 @@ export default function SearchPage() {
   const q = params.get("q") ?? "";
   const pageParam = Number(params.get("page") ?? 1);
   const [page, setPage] = useState(pageParam);
-  const [isSmall, setIsSmall] = useState(false);
+  const [isSmall, setIsSmall] = useState<boolean>(() => (typeof window !== 'undefined' ? window.innerWidth <= 640 : false));
+  const [isMobile, setIsMobile] = useState<boolean>(() => (typeof window !== 'undefined' ? window.innerWidth <= 480 : false));
   const isOffline = useOffline();
   const { data, isLoading, isError, error, isFetching } = useSearchMovies(q, page);
 
@@ -115,18 +116,21 @@ export default function SearchPage() {
 
   // Responsive state
   useEffect(() => {
-    const checkSize = () => setIsSmall(window.innerWidth < 640);
-    checkSize();
-    window.addEventListener('resize', checkSize);
-    return () => window.removeEventListener('resize', checkSize);
+    const onResize = () => {
+      setIsSmall(window.innerWidth <= 640);
+      setIsMobile(window.innerWidth <= 480);
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  // Ensure complete rows (6 movies per row)
+  // Ensure complete rows based on screen size
   const displayResults = useMemo(() => {
     if (!results.length) return [];
-    const completeRows = Math.floor(results.length / 6);
-    return results.slice(0, completeRows * 6);
-  }, [results]);
+    const cardsPerRow = isMobile ? 3 : 6;
+    const completeRows = Math.floor(results.length / cardsPerRow);
+    return results.slice(0, completeRows * cardsPerRow);
+  }, [results, isMobile]);
 
   function goPage(nextPage: number) {
     setPage(nextPage);
@@ -201,14 +205,14 @@ export default function SearchPage() {
         }}>
           <div style={{ 
             display: 'grid', 
-            gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', 
+            gridTemplateColumns: `repeat(${isMobile ? 3 : 6}, minmax(0, 1fr))`, 
             gap: 12, 
             width: '100%', 
             maxWidth: '100%', 
             boxSizing: 'border-box', 
             minWidth: 0 
           }}>
-            {Array.from({ length: 18 }).map((_, index) => (
+            {Array.from({ length: isMobile ? 9 : 18 }).map((_, index) => (
               <MovieCardSkeleton key={index} isSmall={isSmall} />
             ))}
           </div>
@@ -247,7 +251,7 @@ export default function SearchPage() {
           }}>
             <div style={{ 
               display: 'grid', 
-              gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', 
+              gridTemplateColumns: `repeat(${isMobile ? 3 : 6}, minmax(0, 1fr))`, 
               gap: 12, 
               width: '100%', 
               maxWidth: '100%', 

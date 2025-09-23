@@ -176,6 +176,12 @@ export default function Nav() {
     e.preventDefault();
     if (query.trim()) {
       navigate(`/search?q=${encodeURIComponent(query.trim())}`);
+      // Close modal on mobile after search
+      if (isSearchModalOpen) {
+        setIsSearchModalOpen(false);
+        setOpen(false);
+        setHighlightedIndex(-1);
+      }
     }
   };
 
@@ -206,8 +212,20 @@ export default function Nav() {
       if (open && highlightedIndex >= 0 && highlightedIndex < suggestions.length) {
         e.preventDefault();
         onSelect(suggestions[highlightedIndex]);
+        // Close modal on mobile after selecting suggestion
+        if (isSearchModalOpen) {
+          setIsSearchModalOpen(false);
+          setOpen(false);
+          setHighlightedIndex(-1);
+        }
       } else if (query.trim()) {
         navigate(`/search?q=${encodeURIComponent(query.trim())}`);
+        // Close modal on mobile after search
+        if (isSearchModalOpen) {
+          setIsSearchModalOpen(false);
+          setOpen(false);
+          setHighlightedIndex(-1);
+        }
       }
     } else if (e.key === 'Escape') {
       setOpen(false);
